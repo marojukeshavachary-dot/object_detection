@@ -1,0 +1,23 @@
+# Core dependencies for Real-Time Object Detection System
+# Install with: pip install -r requirements.txt
+
+# Streamlit - Web UI framework
+streamlit>=1.32.0
+
+# OpenCV - Computer vision and video processing
+opencv-python-headless>=4.9.0.80
+
+# Ultralytics YOLO - Object detection model
+ultralytics>=8.2.0
+
+# NumPy - Numerical operations and array processing
+numpy>=1.24.0
+
+# Pillow - Image handling and conversion
+Pillow>=10.0.0
+
+# Plotly - Interactive charts for the dashboard
+plotly>=5.18.0
+
+# Pandas - Data handling for results tables
+pandas>=2.0.0

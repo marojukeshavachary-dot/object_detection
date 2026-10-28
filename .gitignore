@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# YOLO model weights (downloaded automatically on first run)
+*.pt
+models/*.pt
+
+# Generated outputs - keep these local
+outputs/
+sample_images/
+sample_videos/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit cache
+.streamlit/
+
+# Ultralytics cache / runs
+runs/
