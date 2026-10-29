@@ -14,14 +14,12 @@ venv/
 env/
 ENV/
 
-# YOLO model weights (downloaded automatically on first run)
+# YOLO model weights (downloaded automatically on first run in cloud)
 *.pt
 models/*.pt
 
-# Generated outputs - keep these local
+# Generated outputs
 outputs/
-sample_images/
-sample_videos/
 
 # IDE
 .vscode/
@@ -32,8 +30,8 @@ sample_videos/
 .DS_Store
 Thumbs.db
 
-# Streamlit cache
-.streamlit/
+# Streamlit secrets
+.streamlit/secrets.toml
 
 # Ultralytics cache / runs
 runs/
