@@ -1,8 +1,13 @@
 # 🎯 VisionMatrix – Real-Time Object Detection System
 
-**Advanced Computer Vision Using OpenCV and YOLOv8**
+**Advanced Computer Vision Using OpenCV, YOLOv8, and Vercel Edge**
 
-A production-grade, beginner-friendly object detection application that detects, localizes, and classifies multiple objects in real time using webcam feeds, uploaded images, or video files. Powered by **YOLOv8** (Ultralytics) and presented through a high-tech **Streamlit** dashboard.
+A production-grade, multi-platform object detection application that detects, localizes, and classifies multiple objects in real time using webcam feeds, uploaded images, or video files. 
+
+### 🌐 Live Web Application (Deployed on Vercel Edge)
+- **Primary Live Website:** [https://object-detection-web.vercel.app](https://object-detection-web.vercel.app)
+- **Vision Mirror:** [https://object-detection-vision.vercel.app](https://object-detection-vision.vercel.app)
+- **Edge Deployment:** [https://object-detection-brown-five.vercel.app](https://object-detection-brown-five.vercel.app)
 
 ---
 

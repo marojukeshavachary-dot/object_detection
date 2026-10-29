@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisionMatrix AI - Real-Time Object Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- TensorFlow.js and COCO-SSD -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- TOP NAVIGATION BAR -->
+    <header class="top-nav">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">VisionMatrix AI</span>
+          <span class="brand-tag">Object Detection Engine</span>
+        </div>
+      </div>
+
+      <!-- Mode Selector Tabs -->
+      <div class="nav-tabs">
+        <button class="nav-tab active" data-mode="webcam" id="tab-webcam">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          <span>Live Webcam</span>
+        </button>
+        <button class="nav-tab" data-mode="image" id="tab-image">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+            <circle cx="9" cy="9" r="2"/>
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+          </svg>
+          <span>Image Detection</span>
+        </button>
+        <button class="nav-tab" data-mode="video" id="tab-video">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="20" height="15" x="2" y="5" rx="2" ry="2"/>
+            <polygon points="10 8 16 12 10 16 10 8"/>
+          </svg>
+          <span>Video File</span>
+        </button>
+      </div>
+
+      <!-- Model Status Badge -->
+      <div class="nav-status">
+        <div class="status-indicator" id="model-status-indicator">
+          <span class="pulse-dot"></span>
+          <span class="status-label" id="model-status-text">Loading Model...</span>
+        </div>
+        <div class="edge-badge">
+          <svg width="14" height="14" viewBox="0 0 76 65" fill="#000">
+            <path d="M37.5274 0L75.0548 65H0L37.5274 0Z" fill="#ffffff"/>
+          </svg>
+          <span>Vercel Edge</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="dashboard-grid">
+      <!-- LEFT SIDEBAR: CONTROLS & FILTERS -->
+      <aside class="sidebar-panel">
+        <div class="panel-card">
+          <div class="card-header">
+            <h3>Detection Settings</h3>
+            <span class="badge" id="model-badge">COCO-SSD v2</span>
+          </div>
+
+          <!-- Sensitivity / Confidence Slider -->
+          <div class="control-group">
+            <div class="label-row">
+              <label for="conf-slider">Sensitivity / Confidence</label>
+              <span class="value-chip" id="conf-val">20%</span>
+            </div>
+            <input type="range" id="conf-slider" min="5" max="95" value="20" step="1">
+            <div class="range-labels">
+              <span>High Recall (5%)</span>
+              <span>Strict (95%)</span>
+            </div>
+            <p class="control-hint">💡 Lower sensitivity (20%) ensures small objects like <b>watch</b>, <b>mouse</b>, and <b>cup</b> are detected reliably.</p>
+          </div>
+
+          <!-- Category Quick Presets -->
+          <div class="control-group">
+            <label>Quick Class Presets</label>
+            <div class="preset-buttons">
+              <button class="preset-btn active" data-filter="all">All (80)</button>
+              <button class="preset-btn" data-filter="tech">🖱️ Small Tech & Watch</button>
+              <button class="preset-btn" data-filter="people">👤 People & Gear</button>
+              <button class="preset-btn" data-filter="vehicles">🚗 Vehicles</button>
+            </div>
+          </div>
+
+          <!-- Class Search / Filter Input -->
+          <div class="control-group">
+            <div class="label-row">
+              <label for="class-search">Filter Class Name</label>
+              <button class="text-btn" id="btn-clear-filter">Reset</button>
+            </div>
+            <input type="text" id="class-search" placeholder="e.g. watch, mouse, cell phone..." class="input-text">
+          </div>
+
+          <!-- Display Toggles -->
+          <div class="control-group">
+            <label>Overlay Options</label>
+            <div class="toggle-list">
+              <label class="toggle-item">
+                <input type="checkbox" id="toggle-boxes" checked>
+                <span class="toggle-text">Bounding Boxes</span>
+              </label>
+              <label class="toggle-item">
+                <input type="checkbox" id="toggle-labels" checked>
+                <span class="toggle-text">Labels & Confidence %</span>
+              </label>
+              <label class="toggle-item">
+                <input type="checkbox" id="toggle-centers" checked>
+                <span class="toggle-text">Center Target Crosshair</span>
+              </label>
+              <label class="toggle-item">
+                <input type="checkbox" id="toggle-mirror" checked>
+                <span class="toggle-text">Mirror Webcam Stream</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Sample Benchmark Images -->
+          <div class="control-group" id="samples-group">
+            <label>Quick Test Samples</label>
+            <div class="sample-chips">
+              <button class="sample-chip" id="sample-desk">💻 Desk (Mouse + Watch)</button>
+              <button class="sample-chip" id="sample-street">🚗 Street Traffic</button>
+              <button class="sample-chip" id="sample-room">🛋️ Living Room</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER PANEL: LIVE VIEWPORT / CANVAS -->
+      <section class="viewport-panel">
+        <!-- Floating HUD Header -->
+        <div class="viewport-hud">
+          <div class="hud-item">
+            <span class="hud-label">FPS</span>
+            <span class="hud-value" id="hud-fps">0.0</span>
+          </div>
+          <div class="hud-divider"></div>
+          <div class="hud-item">
+            <span class="hud-label">LATENCY</span>
+            <span class="hud-value" id="hud-latency">0 ms</span>
+          </div>
+          <div class="hud-divider"></div>
+          <div class="hud-item">
+            <span class="hud-label">DETECTIONS</span>
+            <span class="hud-value highlight" id="hud-count">0</span>
+          </div>
+          <div class="hud-divider"></div>
+          <div class="hud-item">
+            <span class="hud-label">ACCELERATION</span>
+            <span class="hud-value" id="hud-backend">WebGL</span>
+          </div>
+        </div>
+
+        <!-- Viewport Stage -->
+        <div class="viewport-stage" id="viewport-stage">
+          <!-- Webcam Video Element -->
+          <video id="webcam-video" autoplay playsinline muted></video>
+
+          <!-- Uploaded Video Element -->
+          <video id="file-video" controls playsinline></video>
+
+          <!-- Uploaded Image Element (Hidden source) -->
+          <img id="source-image" alt="Detection Source" crossorigin="anonymous">
+
+          <!-- Primary Drawing Canvas -->
+          <canvas id="output-canvas"></canvas>
+
+          <!-- Placeholder Dropzone when no source is loaded -->
+          <div class="viewport-placeholder" id="viewport-placeholder">
+            <div class="placeholder-content">
+              <div class="placeholder-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </div>
+              <h3 id="placeholder-title">Webcam Ready</h3>
+              <p id="placeholder-subtitle">Click "Start Camera" below to begin live real-time detection</p>
+              <button class="btn btn-primary" id="btn-start-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span>Start Camera</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- File Upload Dropzone (for Image & Video modes) -->
+          <div class="file-dropzone" id="file-dropzone" style="display: none;">
+            <input type="file" id="file-input" accept="image/*,video/*">
+            <div class="dropzone-content">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <h4 id="dropzone-title">Drop your image here or click to browse</h4>
+              <p>Supports PNG, JPG, JPEG, WEBP, MP4</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Viewport Bottom Control Bar -->
+        <div class="viewport-controls">
+          <div class="controls-left">
+            <button class="btn btn-primary" id="btn-cam-toggle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span id="btn-cam-text">Start Camera</span>
+            </button>
+            <button class="btn btn-secondary" id="btn-flip-cam">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 10c0-4.418-3.582-8-8-8s-8 3.582-8 8c0 2.008.74 3.844 1.968 5.253L4 18h5v-5l-1.895 1.895A5.98 5.98 0 0 1 6 10c0-3.314 2.686-6 6-6s6 2.686 6 6c0 1.5-.552 2.87-1.47 3.924l1.418 1.418A7.96 7.96 0 0 0 20 10z"/>
+              </svg>
+              <span>Flip Camera</span>
+            </button>
+            <button class="btn btn-secondary" id="btn-snapshot">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <span>Snapshot</span>
+            </button>
+          </div>
+
+          <div class="controls-right">
+            <button class="btn btn-download" id="btn-download-img">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Save Image</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT SIDEBAR: ANALYTICS & CROPS -->
+      <aside class="analytics-panel">
+        <!-- Metric Cards Grid -->
+        <div class="metric-cards">
+          <div class="metric-card">
+            <span class="metric-label">Total Found</span>
+            <span class="metric-num" id="stat-total">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Unique Classes</span>
+            <span class="metric-num" id="stat-unique">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Top Detection</span>
+            <span class="metric-num text-sm" id="stat-primary">-</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Avg Confidence</span>
+            <span class="metric-num" id="stat-conf">0%</span>
+          </div>
+        </div>
+
+        <!-- Detected Classes Breakdown -->
+        <div class="panel-card breakdown-card">
+          <div class="card-header">
+            <h3>Objects Breakdown</h3>
+            <span class="badge" id="breakdown-badge">0 detected</span>
+          </div>
+          <div class="breakdown-list" id="breakdown-list">
+            <div class="empty-state">
+              <p>No objects detected yet</p>
+              <span>Point your camera or upload an image</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Crops Gallery -->
+        <div class="panel-card crops-card">
+          <div class="card-header">
+            <h3>Crop Gallery</h3>
+            <span class="badge" id="crops-count">0 items</span>
+          </div>
+          <div class="crops-grid" id="crops-grid">
+            <div class="empty-state">
+              <span>Cropped objects will appear here in real time</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Actions -->
+        <div class="export-actions">
+          <button class="btn btn-export" id="btn-export-json">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            <span>JSON</span>
+          </button>
+          <button class="btn btn-export" id="btn-export-csv">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <circle cx="10" cy="13" r="1"/>
+              <circle cx="14" cy="13" r="1"/>
+              <circle cx="10" cy="17" r="1"/>
+              <circle cx="14" cy="17" r="1"/>
+            </svg>
+            <span>CSV</span>
+          </button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
